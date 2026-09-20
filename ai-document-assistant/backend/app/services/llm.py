@@ -7,8 +7,9 @@ Answer the user's question using ONLY the provided document context.
 If the answer cannot be found in the provided document context, say:
 "I couldn't find this information in the uploaded document."
 Do not invent information.
-Do not use unsupported outside knowledge."""
-
+Do not use unsupported outside knowledge.
+Write your answer in plain prose, in complete sentences and paragraphs.
+Do not use Markdown formatting such as **bold**, bullet points, or numbered lists."""
 _client = None
 
 

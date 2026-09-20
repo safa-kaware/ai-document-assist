@@ -1,46 +1,104 @@
 import { useEffect, useState } from 'react'
 import Header from './components/Header'
 import UploadArea from './components/UploadArea'
+import DocumentList from './components/DocumentList'
 import QuestionBox from './components/QuestionBox'
-import { checkBackendHealth } from './services/api'
+import AnswerCard from './components/AnswerCard'
+import { checkBackendHealth, sendChatMessage, listDocuments } from './services/api'
 
 function App() {
   const [backendStatus, setBackendStatus] = useState('checking')
+  const [documents, setDocuments] = useState([])
+  const [selectedDocId, setSelectedDocId] = useState(null)
+  const [answer, setAnswer] = useState(null)
+  const [sources, setSources] = useState([])
+  const [isAsking, setIsAsking] = useState(false)
+  const [chatError, setChatError] = useState('')
+
+  const refreshDocuments = async () => {
+    try {
+      const docs = await listDocuments()
+      setDocuments(docs)
+      return docs
+    } catch {
+      return []
+    }
+  }
 
   useEffect(() => {
-    checkBackendHealth()
-      .then(() => setBackendStatus('connected'))
-      .catch(() => setBackendStatus('error'))
+    const initialize = async () => {
+      try {
+        await checkBackendHealth()
+        setBackendStatus('connected')
+      } catch {
+        setBackendStatus('error')
+      }
+      await refreshDocuments()
+    }
+    initialize()
   }, [])
 
+  const handleUploadSuccess = async (uploadedDoc) => {
+    await refreshDocuments()
+    setSelectedDocId(uploadedDoc.id)
+    setAnswer(null)
+    setSources([])
+    setChatError('')
+  }
+
+  const handleSelectDocument = (docId) => {
+    setSelectedDocId(docId)
+    setAnswer(null)
+    setSources([])
+    setChatError('')
+  }
+
+  const handleDocumentDeleted = (deletedId) => {
+    setDocuments((prev) => prev.filter((d) => d.id !== deletedId))
+    if (selectedDocId === deletedId) {
+      setSelectedDocId(null)
+      setAnswer(null)
+      setSources([])
+    }
+  }
+
+  const handleAsk = async (question) => {
+    setIsAsking(true)
+    setChatError('')
+    setAnswer(null)
+
+    try {
+      const result = await sendChatMessage(selectedDocId, question)
+      setAnswer(result.answer)
+      setSources(result.sources)
+    } catch (err) {
+      setChatError(err.message)
+    } finally {
+      setIsAsking(false)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="app-shell">
+      <Header status={backendStatus} />
 
-      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-        <div className="text-sm">
-          Backend status:{' '}
-          {backendStatus === 'checking' && (
-            <span className="text-gray-500">checking...</span>
-          )}
-          {backendStatus === 'connected' && (
-            <span className="text-green-600 font-medium">connected ✅</span>
-          )}
-          {backendStatus === 'error' && (
-            <span className="text-red-600 font-medium">
-              not reachable ❌ — is the backend running?
-            </span>
-          )}
-        </div>
+      <main className="app-body">
+        <div className="app-body-flex">
+          <div className="doc-rail mb-4 mb-md-0">
+            <h2 className="panel-label">Documents</h2>
+            <UploadArea onUploadSuccess={handleUploadSuccess} />
+            <DocumentList
+              documents={documents}
+              selectedId={selectedDocId}
+              onSelect={handleSelectDocument}
+              onDeleted={handleDocumentDeleted}
+            />
+          </div>
 
-        <UploadArea />
-        <QuestionBox />
-
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <h2 className="text-sm font-semibold text-gray-700 mb-2">Answer</h2>
-          <p className="text-sm text-gray-400">
-            Answers will appear here once the chat pipeline is built
-          </p>
+          <div className="chat-panel">
+            <QuestionBox documentId={selectedDocId} onAsk={handleAsk} isLoading={isAsking} />
+            <AnswerCard answer={answer} sources={sources} isLoading={isAsking} error={chatError} />
+          </div>
         </div>
       </main>
     </div>

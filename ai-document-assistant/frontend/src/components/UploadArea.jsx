@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { uploadDocument } from '../services/api'
 
-function UploadArea() {
-  const [status, setStatus] = useState('idle') // idle | uploading | success | error
+function UploadArea({ onUploadSuccess }) {
+  const [status, setStatus] = useState('idle')
   const [errorMessage, setErrorMessage] = useState('')
   const [uploadedDoc, setUploadedDoc] = useState(null)
 
@@ -17,6 +17,7 @@ function UploadArea() {
       const result = await uploadDocument(file)
       setUploadedDoc(result)
       setStatus('success')
+      onUploadSuccess(result)
     } catch (err) {
       setErrorMessage(err.message)
       setStatus('error')
@@ -24,29 +25,24 @@ function UploadArea() {
   }
 
   return (
-    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-white">
-      <input
-        type="file"
-        accept=".pdf"
-        onChange={handleFileChange}
-        className="block mx-auto text-sm text-gray-600"
-      />
+    <div className="upload-box">
+      <input type="file" accept=".pdf" onChange={handleFileChange} className="form-control form-control-sm" />
 
       {status === 'uploading' && (
-        <p className="mt-3 text-sm text-gray-500">Uploading and extracting text...</p>
+        <p className="upload-status">Uploading and extracting text...</p>
       )}
 
       {status === 'success' && uploadedDoc && (
-        <div className="mt-3 text-sm text-green-600 font-medium">
-          ✅ {uploadedDoc.filename} uploaded ({(uploadedDoc.size_bytes / 1024).toFixed(1)} KB)
-          <div className="text-gray-500 font-normal mt-1">
+        <div className="upload-status success">
+          {uploadedDoc.filename} uploaded ({(uploadedDoc.size_bytes / 1024).toFixed(1)} KB)
+          <div className="detail">
             {uploadedDoc.pages_with_text} of {uploadedDoc.page_count} pages have extractable text
           </div>
         </div>
       )}
 
       {status === 'error' && (
-        <p className="mt-3 text-sm text-red-600 font-medium">❌ {errorMessage}</p>
+        <p className="upload-status error">{errorMessage}</p>
       )}
     </div>
   )

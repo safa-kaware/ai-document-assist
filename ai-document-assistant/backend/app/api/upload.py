@@ -8,7 +8,8 @@ from app.models.schemas import DocumentResponse
 from app.services.document_loader import extract_text_from_pdf, PDFExtractionError
 from app.services.text_splitter import chunk_pages
 from app.services.embeddings import embed_texts
-from app.services.vector_store import add_chunks
+from app.services.database import add_chunks, add_document
+
 
 router = APIRouter()
 
@@ -51,12 +52,40 @@ async def upload_document(file: UploadFile = File(...)):
 
     chunks = chunk_pages(pages, document_id=document_id, filename=file.filename)
 
+    document_record = {
+        "id": document_id,
+        "filename": file.filename,
+        "size_bytes": len(contents),
+        "page_count": len(pages),
+        "pages_with_text": pages_with_text,
+        "saved_filename": safe_filename,
+    }
+    try:
+        add_document(document_record)
+    except Exception as e:
+
+        os.remove(save_path)
+        raise HTTPException(status_code=500, detail="Failed to save document record.")
+
     try:
         chunk_texts = [c["text"] for c in chunks]
         vectors = embed_texts(chunk_texts)
+    except Exception:
+        os.remove(save_path)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate embeddings for this document. Please try again.",
+        )
+
+    try:
         add_chunks(chunks, vectors)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process document for search: {str(e)}")
+    
+        os.remove(save_path)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to store document data. Please try again.",
+        )
 
     return DocumentResponse(
         id=document_id,

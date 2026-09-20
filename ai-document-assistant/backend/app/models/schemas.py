@@ -10,18 +10,24 @@ class DocumentResponse(BaseModel):
     pages_with_text: int
 
 
+class DocumentListItem(BaseModel):
+    id: str
+    filename: str
+    size_bytes: int
+    page_count: int
+    pages_with_text: int
+
+
 class ChatRequest(BaseModel):
     document_id: str
     question: str
 
 
-class RetrievedChunk(BaseModel):
-    text: str
-    filename: str
+class Source(BaseModel):
+    document: str
     page: int
-    distance: float
 
 
-class RetrievalResponse(BaseModel):
-    question: str
-    retrieved_chunks: list[RetrievedChunk]
+class ChatResponse(BaseModel):
+    answer: str
+    sources: list[Source]
