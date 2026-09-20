@@ -1,0 +1,17 @@
+# Python
+**/.venv/
+**/__pycache__/
+*.pyc
+ai-document-assistant/backend/.env
+
+# Node
+**/node_modules/
+**/dist/
+
+# Data
+ai-document-assistant/backend/uploads/
+ai-document-assistant/backend/chroma/
+
+# OS
+.DS_Store
+Thumbs.db
