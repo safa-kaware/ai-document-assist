@@ -15,15 +15,21 @@ def get_embedding_model() -> SentenceTransformer:
     return _model
 
 
-def embed_texts(texts: list[str]) -> list[list[float]]:
+def embed_texts(texts: list[str], batch_size: int = 16) -> list[list[float]]:
     """
-    Embeds a list of text chunks. Returns a list of vectors (one per input text),
-    each a list of floats of fixed length (384 dimensions for this model).
+    Embeds a list of text chunks in small batches to keep peak memory low
+    on memory-constrained environments (e.g. Render's free tier).
+    Returns a list of vectors (one per input text), each 384-dimensional.
     """
     model = get_embedding_model()
-    embeddings = model.encode(texts, show_progress_bar=False)
-    return embeddings.tolist()
+    all_embeddings = []
 
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i:i + batch_size]
+        batch_embeddings = model.encode(batch, show_progress_bar=False)
+        all_embeddings.extend(batch_embeddings.tolist())
+
+    return all_embeddings
 
 def embed_query(text: str) -> list[float]:
     """
