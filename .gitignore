@@ -12,6 +12,7 @@ ai-document-assistant/backend/.env
 ai-document-assistant/backend/uploads/
 ai-document-assistant/backend/chroma/
 ai-document-assistant/backend/documents.json
+ai-document-assistant/frontend/.env.local
 
 # OS
 .DS_Store
