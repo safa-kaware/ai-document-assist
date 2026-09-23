@@ -1,27 +1,14 @@
 from fastembed import TextEmbedding
 
-_model = None  # loaded lazily, once, and reused
+_model = None
 
-# BAAI/bge-small-en-v1.5 is a close equivalent to all-MiniLM-L6-v2 in
-# quality and size, but runs via ONNX Runtime (fastembed) instead of
-# PyTorch — this uses a fraction of the memory, which is what fixes
-# the OOM kill on Render's 512MB free tier.
-# NOTE: this model outputs 384-dim vectors, same as MiniLM-L6-v2, so
-# your ChromaDB collection dimension is unaffected — but the actual
-# vector values differ from the old model, so you MUST re-embed and
-# re-store any documents that were embedded with the old model.
-MODEL_NAME = "BAAI/bge-small-en-v1.5"
-
-
-def get_embedding_model() -> TextEmbedding:
-    """
-    Loads the embedding model once and caches it in memory.
-    fastembed uses ONNX Runtime under the hood instead of PyTorch,
-    which keeps peak memory well under Render's 512MB free-tier limit.
-    """
+def get_embedding_model():
     global _model
     if _model is None:
-        _model = TextEmbedding(model_name=MODEL_NAME)
+        _model = TextEmbedding(
+            model_name="BAAI/bge-small-en-v1.5",
+            threads=1,  # limit ONNX Runtime threads on constrained memory
+        )
     return _model
 
 
