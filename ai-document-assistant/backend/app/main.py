@@ -10,8 +10,8 @@ app = FastAPI(title="AI Document Assistant API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # local dev
-        "https://ai-document-assist-eight.vercel.app",  # deployed frontend
+        "http://localhost:5173",
+        "https://ai-document-assist-eight.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -25,7 +25,7 @@ app.include_router(documents.router)
 
 @app.on_event("startup")
 async def startup_event():
-    get_embedding_model()  # load embedding model once, at boot
+    get_embedding_model()
 
 
 @app.get("/")
