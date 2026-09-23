@@ -89,6 +89,4 @@ Create a `.env` file in `backend/` with your Groq API key and any other required
 
 ---
 
-## Author
 
-Built by Safa — Computer Science (AI & ML) student, as a portfolio project.
